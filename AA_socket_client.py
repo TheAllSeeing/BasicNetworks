@@ -12,9 +12,9 @@ if __name__ == '__main__':
         running = True
         while running:
             count = 1
-            request = input(colortext(f'In [{count}]', Color.GREEN))
+            request = input(colortext(f'In [{count}] ', Color.GREEN))
             client_socket.send(request.encode())
             response = client_socket.recv(1025).decode()
-            print(colortext(f'Out [{count}] {response}', Color.RED))
+            print(colortext(f'Out [{count}] ', Color.RED) + response)
             if response == 'QUIT':
                 running = False
