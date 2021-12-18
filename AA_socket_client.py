@@ -18,3 +18,4 @@ if __name__ == '__main__':
             print(colortext(f'Out [{count}] ', Color.RED) + response)
             if response == 'QUIT':
                 running = False
+            count += 1
