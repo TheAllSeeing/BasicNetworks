@@ -2,22 +2,19 @@
 
 import socket
 import constants
+from utils import colortext, Color, connect_client
 
-CLIENT_IP = constants.LAPTOP_SERVER_IP
+SERVER_IP = constants.LAPTOP_SERVER_IP
 
 if __name__ == '__main__':
-    client_socket = socket.socket()
-
-    valid = False
-    port = constants.PROGRAM_PORT
-    while not valid:
-        try:
-            client_socket.connect((CLIENT_IP, port))
-            print(f'Connected at port {port}')
-            valid = True
-        except OSError:
-            port += 1
-
-    client_socket.send(input('What is your name? ').encode())
-    data = client_socket.recv(1025).decode()
-    print(f'Server sent "{data}"')
+    with socket.socket() as client_socket:
+        connect_client(client_socket, SERVER_IP)
+        running = True
+        while running:
+            count = 1
+            request = input(colortext(f'In [{count}]', Color.GREEN))
+            client_socket.send(request.encode())
+            response = client_socket.recv(1025).decode()
+            print(colortext(f'Out [{count}] {response}', Color.RED))
+            if response == 'QUIT':
+                running = False

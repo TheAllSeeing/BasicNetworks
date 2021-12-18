@@ -1,52 +1,57 @@
 #!/bin/python3
-
+import datetime
+import random
 import socket
-from enum import Enum
 
 import constants
-from termcolor import colored
+import utils
+from utils import confirm
+
+REQUESTS_IP = constants.SELF_SERVER_IP
 
 
-SERVER_IP = constants.SELF_SERVER_IP
+def time() -> str:
+    return datetime.datetime.now().strftime('HH:mm')
 
 
-class Color(Enum):
-    GREEN = 'green'
-    RED = 'red'
+def whoru() -> str:
+    return socket.gethostname()
 
 
-def colortext(text: str, color: Color, marker=False):
-    if marker:
-        return colored(text, on_color=color.value)
-    return colored(text, color.value)
+def rand() -> str:
+    return str(random.randint(1, 10))
 
 
-def confirm(text: str):
-    print(colortext(text, Color.GREEN))
+def exit() -> str:
+    return 'QUIT'
+
+
+COMMANDS = {
+    'TIME': time,
+    'WHORU': whoru,
+    'RAND': rand,
+    'EXIT': exit
+}
+
+
+def respond(command: str) -> str:
+    try:
+        return COMMANDS[command]()
+    except KeyError:
+        commands = list(COMMANDS.keys())
+        commands.sort()
+        return f'{command}: Command not found. Available command are {", ".join(commands)}'
 
 
 if __name__ == '__main__':
     server_socket = socket.socket()
 
-    valid = False
-    port = constants.PROGRAM_PORT
-    while not valid:
-        try:
-            server_socket.bind((SERVER_IP, port))
-            valid = True
-        except OSError:
-            port += 1
-
-
-    # server_socket.recv(1026).decode()
-    server_socket.listen()
-    confirm(f'Server is up and running at port {port}')
+    utils.connect_server(server_socket, REQUESTS_IP)
 
     (client_socket, client_ip) = server_socket.accept()
     confirm('Client connected')
 
-    name = client_socket.recv(1024).decode()
-    print('Client sent: ' + name)
+    command = client_socket.recv(1024).decode()
+    print('Command received: ' + command)
 
-    with client_socket:
-        client_socket.send(f'Hello, {name}'.encode())
+    client_socket.send(respond(command).encode())
