@@ -2,20 +2,26 @@
 
 import socket
 import constants
-from utils import colortext, Color, connect_client
+from AC_protocol import Message
+from utils import colortext, Color, connect_client, CouldNotFindPortError
 
 SERVER_IP = constants.LAPTOP_SERVER_IP
 
 if __name__ == '__main__':
-    with socket.socket() as client_socket:
-        connect_client(client_socket, SERVER_IP)
-        running = True
-        while running:
+
+    try:
+        with socket.socket() as client_socket:
+            connect_client(client_socket, SERVER_IP)
+            running = True
             count = 1
-            request = input(colortext(f'In [{count}] ', Color.GREEN))
-            client_socket.send(request.encode())
-            response = client_socket.recv(1025).decode()
-            print(colortext(f'Out [{count}] ', Color.RED) + response)
-            if response == 'QUIT':
-                running = False
-            count += 1
+            while running:
+                request = Message(input(colortext(f'In [{count}]: ', Color.GREEN)))
+                request.send(client_socket)
+                response = Message.receive(client_socket)
+                if response is not None:
+                    print(colortext(f'Out [{count}]: ', Color.RED) + response + '\n')
+                    if response == 'QUIT':
+                        running = False
+                    count += 1
+    except CouldNotFindPortError:
+        pass

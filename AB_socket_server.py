@@ -5,13 +5,14 @@ import socket
 
 import constants
 import utils
+from AC_protocol import Message
 from utils import confirm
 
 REQUESTS_IP = constants.SELF_SERVER_IP
 
 
 def time() -> str:
-    return datetime.datetime.now().strftime('HH:mm')
+    return datetime.datetime.now().strftime('%Y-%m-%d %H:%M')
 
 
 def whoru() -> str:
@@ -34,13 +35,19 @@ COMMANDS = {
 }
 
 
-def respond(command: str) -> str:
+def respond(command: str) -> Message:
     try:
-        return COMMANDS[command]()
+        if command is None:
+            return None
+        return Message(COMMANDS[command]())
     except KeyError:
         commands = list(COMMANDS.keys())
         commands.sort()
-        return f'{command}: Command not found. Available command are {", ".join(commands)}'
+        not_found_message = f': Command not found. Available command are {", ".join(commands)}'
+        available_command_space = Message.MAX_MESSAGE_LENGTH - len(not_found_message)
+        if len(command) > available_command_space:
+            command = command[:available_command_space - 3] + '...'
+        return Message(f'{command}: {not_found_message}')
 
 
 if __name__ == '__main__':
@@ -51,7 +58,11 @@ if __name__ == '__main__':
     (client_socket, client_ip) = server_socket.accept()
     confirm('Client connected')
 
-    command = client_socket.recv(1024).decode()
-    print('Command received: ' + command)
-
-    client_socket.send(respond(command).encode())
+    running = True
+    while running:
+        command = Message.receive(client_socket)
+        if command != '':
+            print('Command received: ' + str(command))
+            respond(command).send(client_socket)
+        if command == 'EXIT':
+            running = False
